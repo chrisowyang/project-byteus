@@ -1,3 +1,4 @@
+
 require(MASS)
 require(stats)
 require(car)
@@ -9,6 +10,8 @@ source("helper.R")
 shinyServer(function(input, output) {
   
   dataInput <- reactive({input })
+  
+  # reactive({ifelse(is.null(input$addVar), "", updateCheckboxInput(session, "addVar", value = FALSE))})
   
   # input$file1 will be NULL initially. After the user selects
   # and uploads a file, it will be a data frame with 'name',
@@ -48,7 +51,7 @@ shinyServer(function(input, output) {
       return(NULL)
     varChoices = createVarList(input)
     if(input$plotType == "Scatterplot" | input$plotType == "Boxplot" | input$plotType == "Mosaic Plot")
-    selectInput("var1", label = "Select Explanatory Variable", choices = varChoices)
+    selectInput("var1", label = "Select Response Variable", choices = varChoices)
   })
   
   
@@ -58,16 +61,16 @@ shinyServer(function(input, output) {
       return(NULL)
     varChoices = createVarList(input)
     if(input$plotType == "Scatterplot" | input$plotType == "Boxplot" | input$plotType == "Mosaic Plot")
-    selectInput("var2", label = "Select Predictor Variable", choices = varChoices)
+    selectInput("var2", label = "Select Explanatory Variable", choices = varChoices)
   })
   
   output$selectedVarUI = renderUI({
     inFile <- input$file1
-    if (is.null(inFile))
+    if(is.null(inFile))
       return(NULL)
     varChoices = createVarList(input)
-    if(input$plotType == "Scatterplot")
-    selectInput("selectedVar", label = "Color by what variable", choices = varChoices)
+    if(input$addVar == TRUE)
+      selectInput("selectedVar", label = "Color by what variable", choices = varChoices)
   })
   
   output$modelUI = renderUI({
@@ -78,12 +81,6 @@ shinyServer(function(input, output) {
       textInput("model", label = "Enter model", value = "y~x1+x2+...")
   
   })
-  
-  
-  
-  
-  
-  
   
   
   output$numUI = renderUI({
@@ -122,6 +119,13 @@ shinyServer(function(input, output) {
     if(input$plotType == "Response Transformation Diagnosis")
       checkboxInput("logBox", label = "Log Transform Response", value = FALSE)
     
+  })
+  output$selectedVarOption = renderUI({
+    inFile <- input$file1
+    if (is.null(inFile))
+      return(NULL)
+    if(input$plotType == "Scatterplot" | input$plotType == "Classical MDS")
+      checkboxInput("addVar", label = "Color by group", value = FALSE)
   })
   
   

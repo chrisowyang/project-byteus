@@ -1,4 +1,9 @@
 
+require(reshape2)
+require(ggplot2)
+require(DT)
+require(gtools)
+
 mapTrans = function(input){
   
   inFile <- input$file1
@@ -59,7 +64,7 @@ mapHeat = function(input){
   varcor = cor(dataInput[,nums]) 
   regular_cor_melt = melt(varcor)
   p= qplot(x=Var1, y=Var2, data=regular_cor_melt, main="Correlation Heat Map", fill=value,geom="tile")+ scale_fill_gradient2(limits=c(-1, 1))
-  p+theme(axis.text.x=element_text(size=5, face="bold"))
+  print(p+theme(axis.text.x=element_text(size=7, face="bold")))
   
 }
 
@@ -68,7 +73,7 @@ mapfunc <- function(input){
   inFile <- input$file1
   if(is.null(inFile))return(NULL)
   types = input$plotType
-  if(types =="Response Transformation"){
+  if(types =="Response Transformation Diagnosis"){
     mapTrans(input)
   }
   
@@ -81,13 +86,21 @@ mapfunc <- function(input){
     
     mapMosaic(input)
   }
-  if(types == "Classical MDS"){
+  if(types == "Classical MDS"  & input$addVar == FALSE){
     
     mapMDS(input)
   }
-  if(types == "Scatterplot"){
+  if(types == "Classical MDS"  & input$addVar == TRUE){
+    
+    mapMDSCol(input)
+  }
+  if(types == "Scatterplot" & input$addVar == FALSE){
     
     mapScat(input)
+  }
+  if(types == "Scatterplot" & input$addVar == TRUE){
+    
+    mapScatCol(input)
   }
   if(types == "Boxplot"){
     
@@ -108,6 +121,10 @@ mapfunc <- function(input){
   }
 }
 outSumm = function(input){
+  
+  if(input$plotType == "Factor Analysis")return(buildSumm(input))
+  
+  if(input$plotType == "PCA")return(buildSumm2(input))
   
   if(!input$plotType == "Response Transformation Diagnosis" & !input$plotType == "Added-Variable Plots")return("Build model in Response Transformation or AV plot")
     
@@ -151,11 +168,33 @@ mapMDS= function(input){
   nums = sapply(dataInput, is.numeric)
   
   loc = cmdscale(dist(dataInput[, nums]), k = 2, eig = TRUE)
+
   
-  #create input to select what variable to color (selectedVar)
-   #col = input$selectedVar,
-  plot(loc$points, pch = 19)
+  plot(loc$points, pch = 19, main = "Classical MDS")
   
+}
+
+mapMDSCol= function(input){
+  
+  inFile <- input$file1
+  if (is.null(inFile))
+    return(NULL)
+  
+  dataInput <- read.csv(inFile$datapath, header=input$header, sep=input$sep, quote=input$quote)
+  
+  nums = sapply(dataInput, is.numeric)
+  
+  loc = cmdscale(dist(dataInput[, nums]), k = 2, eig = TRUE)
+  
+  group = eval(parse(text = paste("dataInput$", input$selectedVar, sep="")))
+  
+  if(is.numeric(group))group = quantcut(group, q=4)
+  
+  colPalette = rainbow(length(levels(unique(group))))
+  
+  plot(loc$points, col = colPalette[group], pch = 19)
+  
+  legend("topleft",legend = levels(unique(group)), fill = colPalette, cex=.7)
 }
 
 outCont = function(input){
@@ -184,11 +223,47 @@ mapScat = function (input){
   
   x= eval(parse(text = paste("dataInput$", input$var2, sep="")))
   
-  return(plot(x,y))
+  mainString = paste(input$var1," vs ", input$var2, sep="")
+  
+  ylab = paste(input$var1, sep="")
+    
+  xlab = paste(input$var2, sep="") 
+  
+  plot(x,y, ylab = ylab, xlab = xlab, main = mainString)
 }
 
 
+mapScatCol = function (input){
   
+  inFile <- input$file1
+  if (is.null(inFile))
+    return(NULL)
+  
+  dataInput <- read.csv(inFile$datapath, header=input$header, sep=input$sep, quote=input$quote)
+  
+  if(input$scatMatrix == TRUE)return(pairs(dataInput))
+  
+  y = eval(parse(text = paste("dataInput$", input$var1, sep="")))
+  
+  x= eval(parse(text = paste("dataInput$", input$var2, sep="")))
+  
+  group = eval(parse(text = paste("dataInput$", input$selectedVar, sep="")))
+  
+  if(is.numeric(group))group = quantcut(group, q=4)
+  
+  colPalette = rainbow(length(levels(unique(group))))
+  
+  ylab = paste(input$var1, sep="")
+  
+  xlab = paste(input$var2, sep="") 
+  
+  mainString = paste(input$var1," vs ", input$var2, sep="")
+  
+  plot(x,y,  col = colPalette[group], pch=19, xlab = xlab, ylab = ylab, main = mainString)
+  
+  legend("topleft",legend = levels(unique(group)), fill = colPalette, cex=.7)
+}
+
 mapBox = function(input){
   
   inFile <- input$file1
@@ -201,8 +276,13 @@ mapBox = function(input){
   
   x= eval(parse(text = paste("dataInput$", input$var2, sep="")))
   
-  #ylab needs fix
-  boxplot(y ~ x, data = dataInput, names = levels(x))
+  if(is.numeric(x))x = quantcut(x, q=4)
+  
+  ylab = paste(input$var1, sep="")
+  
+  mainString = paste(input$var1," vs ", input$var2, sep="")
+  
+  boxplot(y ~ x, data = dataInput, names = levels(x), ylab = ylab, main = mainString)
   
   
 }
@@ -253,13 +333,20 @@ mapMosaic = function(input){
   
   x= eval(parse(text = paste("dataInput$", input$var2, sep="")))
   
+  if(is.numeric(x))x = quantcut(x, q=4)
+  
   tab <- table(x, y)
   
   row.names(tab) <- levels(x)
   
-  #fix labels
-  mosaicplot(tab, main = " ", color = TRUE)
+  ylab = paste(input$var1, sep="")
   
+  xlab = paste(input$var2, sep="") 
+  
+  mainString = paste(input$var1," vs ", input$var2, sep="")
+  
+  mosaicplot(tab, color = TRUE, ylab = ylab, xlab = xlab, main = mainString)
+
 }
   
 
@@ -273,9 +360,9 @@ mapPCA = function(input){
   
   nums = sapply(dataInput, is.numeric)
   
-  pc = prcomp(dataInput[,nums], scale = TRUE)
+  pca = prcomp(dataInput[,nums], scale = TRUE)
   
-  plot(pc$x, col = input$selectedVar, pch = 19)
+  biplot(pca, cex = 0.7)
 }
 
 mapFactor = function(input){
@@ -286,7 +373,9 @@ mapFactor = function(input){
   
   dataInput <- read.csv(inFile$datapath, header=input$header, sep=input$sep, quote=input$quote)
   
-  factanal(dataInput[,-1] , factors = input$factInt) 
+  nums = sapply(dataInput, is.numeric)
+  
+  factanal(dataInput[,nums] , factors = input$factInt)
   
   
 }
@@ -299,11 +388,37 @@ createVarList = function(input){
   
   dataInput <- read.csv(inFile$datapath, header=input$header, sep=input$sep, quote=input$quote)
   
-  choices = paste(names(dataInput),sep='',collapse=',')
+  choices = paste(names(dataInput[,-1]),sep='',collapse=',')
   
   listChoices = as.list(strsplit(choices, ",")[[1]])
   return(listChoices)
 }
 
 
+buildSumm = function(input){
+  inFile <- input$file1
+  if (is.null(inFile))
+    return(NULL)
+  
+  dataInput <- read.csv(inFile$datapath, header=input$header, sep=input$sep, quote=input$quote)
+  
+  nums = sapply(dataInput, is.numeric)
+  
+  factanal(dataInput[,nums] , factors = input$factInt)
+  
+}
+
+buildSumm2 = function(input){
+  inFile <- input$file1
+  if (is.null(inFile))
+    return(NULL)
+  
+  dataInput <- read.csv(inFile$datapath, header=input$header, sep=input$sep, quote=input$quote)
+  
+  nums = sapply(dataInput, is.numeric)
+  
+  pca = prcomp(dataInput[,nums], scale = TRUE)
+  
+  return(summary(pca))
+}
 

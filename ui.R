@@ -1,11 +1,11 @@
 
 shinyUI(fluidPage(
-  titlePanel("QuickViz - Quick Data Exploration"),
+  titlePanel("Visualize.It - Quick Data Exploration"),
   
   sidebarLayout(
     sidebarPanel(
       
-      helpText("Upload a data set and start exploring"),
+      helpText("Upload a data set (CSV) and start exploring"),
       
       fileInput('file1', 'Choose CSV File',
                 accept=c('text/csv', 
@@ -19,12 +19,11 @@ shinyUI(fluidPage(
                      Tab='\t'),
                    ','),
       radioButtons('quote', 'Quote',
-                   c(None='',
+                   choices = c(None='',
                      'Double Quote'='"',
-                     'Single Quote'="'"),
-                   '"'),
+                     'Single Quote'="'"),''),
       
-      selectInput("plotType", label = "Plot Type", choices = list('Scatterplot' = 'Scatterplot', 'Mosaic Plot' = 'Mosaic Plot', 'Boxplot' = 'Boxplot','Correlation Heat Map' = 'Correlation Heat Map',  'Classical MDS' = 'Classical MDS','Response Transformation Diagnosis' = 'Response Transformation Diagnosis','Added-Variable Plots' = 'Added-Variable Plots', 'PCA' = 'PCA','Factor Analysis' = 'Factor Analysis')),
+      selectInput("plotType", label = "Plot Type", choices = list('Scatterplot' = 'Scatterplot', 'Mosaic Plot' = 'Mosaic Plot', 'Boxplot' = 'Boxplot','Correlation Heat Map' = 'Correlation Heat Map',  'Classical MDS' = 'Classical MDS','Response Transformation Diagnosis' = 'Response Transformation Diagnosis','Added-Variable Plots' = 'Added-Variable Plots', 'PCA' = 'PCA','Factor Analysis' = 'Factor Analysis'), selected = 'Classical MDS'),
       
       htmlOutput("var1UI"),
       
@@ -40,9 +39,11 @@ shinyUI(fluidPage(
       
       htmlOutput("logBoxUI"),
       
+      htmlOutput("selectedVarOption"),
+    
       htmlOutput("selectedVarUI")),
     
-      mainPanel(plotOutput("plots" , width = "650px", height = "650px"))
+      mainPanel(plotOutput("plots" , width = "750px", height = "750px"))
   ), 
   
  
