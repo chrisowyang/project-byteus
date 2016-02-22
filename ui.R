@@ -16,11 +16,9 @@ shinyUI(fluidPage(
             numericInput("num",label="Reponse variable transformation by exponent n",value=1),
             checkboxInput("logBox",label="Log Transformation Response",value=FALSE),
             selectInput("plotType",label="Plot Type",choices=list('Response Transformation'='Response Transformation','Correlation Heat Map'='Correlation Heat Map','Classical MDS'='Classical MDS'),selected='Response Transformation')),
-            mainPanel(plotOutput("plots",click="plot1_click",brush=brush0pts (id="plot1_brush"),width="650px",height="650px"))
+            mainPanel(plotOutput("plots",click="plot1_click",brush=brushOpts (id="plot1_brush"),width="650px",height="650px"))
         ),
-            #fluidRow(column(width=6,h3("Points near click"),verbatimTextOutput("click_info")),
-                #column(width=6,h3("Brushed points"),verbatimTextOutput("brush_info")),
-            #hr(),
+
         fluidRow(column(4,verbatimTextOutput('contents')),column(4,verbatimTextOutput('summary')))
 ))
             

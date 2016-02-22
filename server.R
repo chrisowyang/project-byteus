@@ -13,10 +13,8 @@ shinyServer(function(input,output) {
         mapfunc(input)
     })
     
-    output$contents<- reactive({
-        inFile<- input$file1
-        if(is.null(inFile))
-            return(NULL)
+    output$contents<- renderPrint({outCont(input)
+})
             
         dataInput <- read.csv(inFile$datapath,header=input$header,sep=input$sep,quote=input$quote)
         
@@ -24,14 +22,24 @@ shinyServer(function(input,output) {
         head(dataInput)
     })
     
-    output$click_info <- renderPrint({
-        inFile <- input$file1
-        if (is.null(inFile))
-            return(NULL)
-        nearPoints(dataInput,inpust$plot1_click,"X","Y")
-    })
-    
     output$summary = renderPrint({
         outSumm(input)
+    })
+    
+    output$var1UI=renderUI({
+        inFile<- input$file1
+        if (is.null(inFile))
+            return(NULL)
+        varChoices = createVarList(input)
+        
+        selectInput("var1",label="Select Predictor Variable", choices = varChoices)
+    })
+    
+    output$selectedVarUI = renderUI({
+        inFile<-input$file1
+        if (is.null(inFile))
+            return(NULL)
+        varChoices = createVarList(input)
+        selectInput("selectedVar",label="Color by what variable",choices=varChoices)
     })
 })
